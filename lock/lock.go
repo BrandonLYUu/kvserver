@@ -28,16 +28,21 @@ func MakeLock(ck kvtest.IKVClerk, lockname string) *Lock {
 
 func (lk *Lock) Acquire() {
 	for {
-		_, version, err := lk.ck.Get(lk.lockName)
-		if err == rpc.ErrNoKey || version == 0 {
-			lk.ck.Put(lk.lockName, "", 1)
-			return
+		v, version, err := lk.ck.Get(lk.lockName)
+		if err == rpc.ErrNoKey || v == "" {
+			randV := kvtest.RandValue(8)
+			lk.ck.Put(lk.lockName, randV, version)
+			v, version, err = lk.ck.Get(lk.lockName)
+			if v == randV {
+				return
+			}
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 100)
 	}
 }
 
 func (lk *Lock) Release() {
 	// Your code here
-	lk.ck.Put(lk.lockName, "", 0)
+	_, version, _ := lk.ck.Get(lk.lockName)
+	lk.ck.Put(lk.lockName, "", version)
 }

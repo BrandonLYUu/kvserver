@@ -20,7 +20,7 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 }
 
 type KVServer struct {
-	mu   sync.Mutex
+	mu   sync.RWMutex
 	data map[string]models.KvState
 	// Your definitions here.
 }
@@ -34,6 +34,8 @@ func MakeKVServer() *KVServer {
 // Get returns the value and version for args.Key, if args.Key
 // exists. Otherwise, Get returns ErrNoKey.
 func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+	kv.mu.RLock()
+	defer kv.mu.RUnlock()
 	v, ok := kv.data[args.Key]
 	if ok {
 		reply.Value = v.Value
@@ -49,6 +51,8 @@ func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
 // If the key doesn't exist, Put installs the value if the
 // args.Version is 0, and returns ErrNoKey otherwise.
 func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
 	v, ok := kv.data[args.Key]
 	if !ok && args.Version == 0 {
 		kv.data[args.Key] = models.KvState{args.Value, 1}
