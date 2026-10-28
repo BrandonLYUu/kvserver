@@ -59,10 +59,14 @@ func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
 func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
 	args := rpc.PutArgs{Key: key, Value: value, Version: version}
 	reply := rpc.PutReply{}
+	isReCall := false
 	for !ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply) {
+		isReCall = true
 		reply = rpc.PutReply{}
 		time.Sleep(time.Millisecond * 100)
 	}
-
+	if isReCall && reply.Err == rpc.ErrVersion {
+		reply.Err = rpc.ErrMaybe
+	}
 	return reply.Err
 }

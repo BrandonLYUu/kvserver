@@ -42,7 +42,6 @@ func (lk *Lock) Acquire() {
 }
 
 func (lk *Lock) Release() {
-	// Your code here
 	_, version, _ := lk.ck.Get(lk.lockName)
 	lk.ck.Put(lk.lockName, "", version)
 }
